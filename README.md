@@ -1,18 +1,27 @@
 ## About
-- Web app to display Digital Innovation Team's curated VR apps for Meta Quest 2 and 3.
-- Can be bookmarked and browsed in Quest headset, as well as desktop browser
-- apps are curated into categores
-- mouse over or point to an app card gives information about the app
-- clicking opens new tab to the meta experience page or webXR link
+- Oxford University Digital Innovation Team showcases VR in its Immersive Lab and loan equipment
+- This web app curates a selection of commercially available VR apps for Meta Quest 2 and 3 VR Headsets
+- It is designed to be bookmarked and used in the Meta Quest browser, as well as desktop browsers
+- The curation is work in progress and an ongoing activity of discovery and optimisation
+
+## App Usage
+- The VR apps are curated into a set of categories relevant to Oxford University
+- VR pointer or PC mouse-over of an app card gives tool tip information about each VR app
+- Clicking an app card opens new tab to the meta experience page or webXR link
 
 ## App Design
 - Web app reads bookmarks.json to render
-- Includes logic to overide data caching
+- Includes logic to override data caching
 - links at bottom of page to book visit (MS Bookings) and to suggest an app (MS Forms)
-- Bookmarks data is maintained and updated in Excel as a CSV file
+- The VR apps data is maintained as a CSV file, openend in Excel (for simple editting by non technical staff)
 - Utility provided to convert CSV to JSON, also adds metadata (date, title)
 
+## Known Issues
+- touch screen user interaction e.g. from a mobile or tablet does not work well for tool tips  
 
+## Deployment
+- web app deployment files in /docs folder
+- published on github-pages: https://ox-dig-innov.github.io/curated-vr-apps/
 
 ## Utils
 #### convert-to-json.py
@@ -42,7 +51,7 @@ REQUIRED_COLUMNS = ['name', 'title', 'url', 'about']
 {
   "about": {
     "title": "Digital Innovation Curated VR Apps",
-    "created": "03 Feb 2025"
+    "created": "25 Feb 2025"
   },
   "groups": [
     {
