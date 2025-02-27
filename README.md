@@ -77,7 +77,13 @@ REQUIRED_COLUMNS = ['group', 'title', 'url', 'about']
 ## Data file formats
 
 #### CSV Format
-
+```
+group,title,url,about
+Wellbeing,,,
+,Flowborne VR,https://www.meta.com/en-gb/experiences/4997438576996478/,"A meditative breathwork experience...."
+,Nature Treks VR,https://www.meta.com/en-gb/experiences/2616537008386430,"Explore tropical beaches, underwater oceans...."
+....
+```
 
 
 #### JSON Format
@@ -94,12 +100,12 @@ REQUIRED_COLUMNS = ['group', 'title', 'url', 'about']
         {
           "title": "Flowborne VR",
           "url": "https://www.meta.com/en-gb/experiences/4997438576996478/",
-          "about": "A meditative breathwork experience enhanced by biofeedback to cultivate a peaceful and serene breathing style. Created by psychologists, it seeks to help alleviate stress and promote deep relaxation. Embark on a soothing journey through enchanting worlds, release tension, and master the art of diaphragmatic breathing. Your very own breath powers the experience as the VR controller captures your abdomen movements. The virtual environment responds to your breathing in real time, guiding your focus and helping you perfect your breathing style. Each exhale translates into a floating movement, allowing for serene exploration within the virtual realm."
+          "about": "A meditative breathwork experience...."
         },
         {
           "title": "Nature Treks VR",
           "url": "https://www.meta.com/en-gb/experiences/2616537008386430",
-          "about": "Explore tropical beaches, underwater oceans and even take to the stars. Discover over 20 different animals, command the weather, take control of the night or shape your own world with ‘orbs’, breathe with the meditation lotus. Immerse yourself into the Nature Treks VR experience and escape into a world of relaxation."
+          "about": "Explore tropical beaches, underwater oceans...."
         },
         {....
 ```
