@@ -95,7 +95,7 @@ Wellbeing,,,
   },
   "groups": [
     {
-      "group": "Wellbeing",
+      "name": "Wellbeing",
       "bookmarks": [
         {
           "title": "Flowborne VR",
