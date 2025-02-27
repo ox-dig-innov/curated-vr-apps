@@ -76,6 +76,16 @@ REQUIRED_COLUMNS = ['group', 'title', 'url', 'about']
 
 ## Data file formats
 
+#### XLSX Format
+
+|group|title|url|about|
+|-----|-----|---|-----|
+|Wellbeing| | | |
+| |Flowborne VR | https://www.meta.com/en-gb/experiences/4997438576996478/ | A meditative breathwork experience....|
+| |Nature Treks VR | https://www.meta.com/en-gb/experiences/2616537008386430 | Explore tropical beaches, underwater oceans....|
+
+
+
 #### CSV Format
 ```
 group,title,url,about
