@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional, Tuple
 # Constants
 ABOUT_TITLE = "Digital Innovation Curated VR Apps"
 DATE_FORMAT = "%d %b %Y"
-REQUIRED_COLUMNS = ['name', 'title', 'url', 'about']
+REQUIRED_COLUMNS = ['group', 'title', 'url', 'about']
 
 def get_column_indices(headers: List[str]) -> Dict[str, int]:
     """
@@ -88,20 +88,20 @@ def process_bookmark_rows(rows: List[List[str]], column_indices: Dict[str, int])
             row.append("")
             
         # Extract values using column indices
-        name = row[column_indices['name']]
+        group = row[column_indices['group']]
         title = row[column_indices['title']]
         url = row[column_indices['url']]
         about = row[column_indices['about']]
         
-        # If there's a name, this is a new group
-        if name:
+        # If there's a group, this is a new group
+        if group:
             if current_group:
                 groups.append(current_group)
             current_group = {
-                "name": name,
+                "group": group,
                 "bookmarks": []
             }
-        # If no name but we have other fields, this is a bookmark entry
+        # If no group but we have other fields, this is a bookmark entry
         elif current_group is not None and (title or url or about):
             bookmark = {
                 "title": title,

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR Bookmarks Converter</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Import Papa Parse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Import SheetJS for Excel parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="app-container">
+        <div id="upload-area">
+            <h1>VR Bookmarks Converter</h1>
+            <label for="file-input" id="upload-label">Select File</label>
+            <input type="file" id="file-input" accept=".csv,.xlsx,.xls">
+            <p>or drag and drop a CSV or Excel file here</p>
+            <div id="sheet-selector">
+                <h3>Select a sheet:</h3>
+                <label for="sheet-list">Available sheets:</label>
+                <select id="sheet-list" aria-label="Available sheets"></select>
+                <button id="process-sheet" class="btn">Process Selected Sheet</button>
+                <button id="cancel-selection" class="btn btn-secondary">Cancel</button>
+            </div>
+            <div class="progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+            const statusDiv = document.getElementById('status');
+            const progressBar = document.querySelector('.progress-bar');
+            const progressContainer = document.querySelector('.progress');
+            const sheetSelector = document.getElementById('sheet-selector');
+            const sheetList = document.getElementById('sheet-list');
+            const processSheetButton = document.getElementById('process-sheet');
+            const cancelSelectionButton = document.getElementById('cancel-selection');
+            
+            // Store original filename
+            let originalFileName = "";
+
+            // Application metadata
+            const ABOUT_TITLE = "Digital Innovation Curated VR Apps";
+            
+            // Generate current date in the format "DD MMM YYYY"
+            const today = new Date();
+            const day = today.getDate();
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const month = monthNames[today.getMonth()];
+            const year = today.getFullYear();
+            const ABOUT_CREATED = `${day} ${month} ${year}`;
+            
+            // Define which columns to include in the JSON output by header name
+            // First column is assumed to be the group name when empty
+            const INCLUDE_COLUMNS = [
+                "title",
+                "url",
+                "about"
+                // Add more columns to include as needed
+                // "Icon",
+                // "Category", 
+                // "Tags"
+            ];
+            
+            // For case-insensitive column matching
+            function normalizeHeader(header) {
+                return header.toLowerCase().trim();
+            }
+
+            let workbook = null; // To store the Excel workbook
+
+            uploadArea.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function () {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function (e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    handleFileUpload(file);
+                } else {
+                    alert('Please upload a valid file.');
+                }
+            });
+
+            fileInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleFileUpload(file);
+                    // Reset the input to allow selecting the same file again
+                    fileInput.value = '';
+                } else {
+                    alert('Please select a valid file.');
+                }
+            });
+
+            processSheetButton.addEventListener('click', function() {
+                const selectedSheet = sheetList.value;
+                if (selectedSheet && workbook) {
+                    // Hide sheet selector
+                    sheetSelector.style.display = 'none';
+                    // Process the selected sheet with improved options
+                    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[selectedSheet], {
+                        header: 1,
+                        defval: "",   // Use empty string for empty cells
+                        blankrows: false // Skip entirely blank rows
+                    });
+                    processExcelData(sheetData);
+                }
+            });
+
+            cancelSelectionButton.addEventListener('click', function() {
+                // Reset and hide sheet selector
+                sheetSelector.style.display = 'none';
+                workbook = null;
+                sheetList.innerHTML = '';
+                statusDiv.textContent = "Operation cancelled. Please select a file.";
+            });
+
+            function handleFileUpload(file) {
+                const fileType = file.name.split('.').pop().toLowerCase();
+                
+                // Store the original filename without extension
+                originalFileName = file.name.substring(0, file.name.lastIndexOf('.'));
+                
+                // Reset UI state
+                statusDiv.textContent = `Reading ${fileType.toUpperCase()} file...`;
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '10%';
+                sheetSelector.style.display = 'none';
+                
+                if (fileType === 'csv') {
+                    // Handle CSV file
+                    handleCsvFile(file);
+                } else if (fileType === 'xlsx' || fileType === 'xls') {
+                    // Handle Excel file
+                    handleExcelFile(file);
+                } else {
+                    statusDiv.textContent = "Unsupported file format. Please upload a CSV or Excel file.";
+                    progressContainer.style.display = 'none';
+                }
+            }
+            
+            function handleCsvFile(file) {
+                // Use Papa Parse to parse the CSV file
+                Papa.parse(file, {
+                    header: false,  // We'll handle the headers manually
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        progressBar.style.width = '50%';
+                        processCsvRows(results.data);
+                    },
+                    error: function(error) {
+                        console.error("CSV parsing error:", error);
+                        statusDiv.textContent = "Error parsing CSV: " + error.message;
+                        progressContainer.style.display = 'none';
+                    }
+                });
+            }
+            
+            function handleExcelFile(file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        workbook = XLSX.read(data, {
+                            type: 'array',
+                            cellDates: true,  // Properly handle dates
+                            cellNF: true,     // Number formatting
+                            cellStyles: true  // Cell styling
+                        });
+                        
+                        const sheetNames = workbook.SheetNames;
+                        
+                        if (sheetNames.length === 1) {
+                            // Only one sheet, process it directly
+                            const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNames[0]], {
+                                header: 1,
+                                defval: "",   // Use empty string for empty cells
+                                blankrows: false // Skip entirely blank rows
+                            });
+                            processExcelData(sheetData);
+                        } else {
+                            // Multiple sheets, show sheet selector
+                            progressBar.style.width = '30%';
+                            populateSheetSelector(sheetNames);
+                        }
+                    } catch (error) {
+                        console.error("Excel parsing error:", error);
+                        statusDiv.textContent = "Error parsing Excel file: " + error.message;
+                        progressContainer.style.display = 'none';
+                    }
+                };
+                
+                reader.onerror = function() {
+                    statusDiv.textContent = "Error reading file.";
+                    progressContainer.style.display = 'none';
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+            
+            function populateSheetSelector(sheetNames) {
+                // Clear previous options
+                sheetList.innerHTML = '';
+                
+                // Add each sheet name as an option
+                sheetNames.forEach(sheetName => {
+                    const option = document.createElement('option');
+                    option.value = sheetName;
+                    option.textContent = sheetName;
+                    sheetList.appendChild(option);
+                });
+                
+                // Show the sheet selector
+                sheetSelector.style.display = 'block';
+                statusDiv.textContent = "Please select a sheet from the Excel file.";
+            }
+            
+            function processExcelData(rows) {
+                statusDiv.textContent = "Processing Excel data...";
+                processCsvRows(rows);
+            }
+            
+            function processCsvRows(rows) {
+                statusDiv.textContent = "Processing data...";
+                
+                try {
+                    // Ensure we have data
+                    if (!rows || rows.length < 2) {
+                        throw new Error("File appears to be empty or has no data rows.");
+                    }
+                    
+                    // First row contains headers
+                    const headers = rows[0].map(header => 
+                        header !== null && header !== undefined ? String(header).trim() : ""
+                    );
+                    
+                    // Create a map of column names to their indices (case-insensitive)
+                    const columnIndices = {};
+                    headers.forEach((header, index) => {
+                        columnIndices[normalizeHeader(header)] = index;
+                    });
+                    
+                    // Validate that required columns exist (case-insensitive)
+                    const missingColumns = [];
+                    INCLUDE_COLUMNS.forEach(col => {
+                        if (columnIndices[normalizeHeader(col)] === undefined) {
+                            missingColumns.push(col);
+                        }
+                    });
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`Required columns missing: ${missingColumns.join(", ")}. Found columns: ${headers.join(", ")}`);
+                    }
+                    
+                    // Skip header row
+                    const dataRows = rows.slice(1);
+                    
+                    // Create groups array for the JSON structure
+                    const groups = [];
+                    let currentGroup = null;
+                    
+                    // Process each row
+                    dataRows.forEach((row) => {
+                        // Row should have at least some data
+                        if (!row || row.length < 2) {
+                            return; // Skip empty rows
+                        }
+                        
+                        // Helper function to get values by column name (case-insensitive)
+                        const getValue = (columnName) => {
+                            const index = columnIndices[normalizeHeader(columnName)];
+                            if (index === undefined || index >= row.length) {
+                                return "";
+                            }
+                            const value = row[index];
+                            return value !== null && value !== undefined ? String(value).trim() : "";
+                        };
+                        
+                        // Group is always the first column
+                        const group = row[0] !== null && row[0] !== undefined ? String(row[0]).trim() : "";
+                        
+                        // Get values for required fields
+                        const title = getValue("title");
+                        const url = getValue("url");
+                        
+                        // Function to build a bookmark object
+                        const buildBookmark = () => {
+                            const bookmark = {};
+                            
+                            // Add only the columns specified in INCLUDE_COLUMNS
+                            INCLUDE_COLUMNS.forEach(columnName => {
+                                const value = getValue(columnName);
+                                bookmark[columnName] = value;
+                            });
+                            
+                            return bookmark;
+                        };
+                        
+                        // Check if this is a group header row (has group name, other fields empty)
+                        if (group && !title && !url) {
+                            // Create a new group
+                            currentGroup = {
+                                name: group,
+                                bookmarks: []
+                            };
+                            groups.push(currentGroup);
+                        }
+                        // Check if this is a bookmark entry (empty group field, has title and URL)
+                        else if (!group && title && url && currentGroup) {
+                            // Add bookmark to current group with only included columns
+                            currentGroup.bookmarks.push(buildBookmark());
+                        }
+                        // Handle edge case: if this is the first bookmark and no group defined yet
+                        else if (!currentGroup && title && url) {
+                            // Create a default group
+                            currentGroup = {
+                                name: "Uncategorized",
+                                bookmarks: []
+                            };
+                            groups.push(currentGroup);
+                            
+                            // Add bookmark to the default group with only included columns
+                            currentGroup.bookmarks.push(buildBookmark());
+                        }
+                        // Skip any other row format
+                    });
+                    
+                    // Check if we created any groups
+                    if (groups.length === 0) {
+                        throw new Error("No valid groups or bookmarks found in the file.");
+                    }
+                    
+                    // Create the final JSON structure
+                    const result = {
+                        about: {
+                            title: ABOUT_TITLE,
+                            created: ABOUT_CREATED
+                        },
+                        groups: groups
+                    };
+                    
+                    // Count total bookmarks
+                    let totalBookmarks = 0;
+                    groups.forEach(group => {
+                        totalBookmarks += group.bookmarks.length;
+                    });
+                    
+                    // Convert to JSON
+                    const jsonContent = JSON.stringify(result, null, 2);
+                    
+                    progressBar.style.width = '90%';
+                    
+                    // Download the JSON file
+                    const downloadedFileName = downloadJsonFile(jsonContent, 'bookmarks.json');
+                    
+                    // Return a success message
+                    progressBar.style.width = '100%';
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        statusDiv.innerHTML = `Conversion successful !<br><br><strong>${downloadedFileName}</strong> has been downloaded with ${groups.length} groups and ${totalBookmarks} bookmarks.`;
+                        // Reset workbook
+                        workbook = null;
+                    }, 500);
+                } catch (error) {
+                    console.error("Error processing data:", error);
+                    statusDiv.textContent = "Error processing data: " + error.message;
+                    progressContainer.style.display = 'none';
+                }
+            }
+
+            function downloadJsonFile(jsonContent, fileName) {
+                // If we have an original filename, use it instead of the default
+                const outputFileName = originalFileName ? `${originalFileName}.json` : fileName;
+                
+                const blob = new Blob([jsonContent], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = outputFileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Return the filename used for the status message
+                return outputFileName;
+            }
+        });
+    </script>
+</body>
+</html>

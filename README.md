@@ -24,14 +24,43 @@
 - published on github-pages: https://ox-dig-innov.github.io/curated-vr-apps/
 
 ## Utils
+- Tools to convert from CSV or Excel to JSON
+- The Web app is recommended as the most simple to use
+
+### Web app
+- web app to convert VR Bookmarks from CSV or Excel to JSON
+- input: **bookmarks.csv** or **bookmarks.xlsx** - master file used for manual editing the data
+- output: **bookmarks.json** - used by main app
+- tool adds current date and a title to output file
+- selects specific columns from input, defined as INCLUDE_COLUMNS
+- ignores any extra columns, so can store metadata which is not transferred to output
+- web app deployed to https://ox-dig-innov.github.io/curated-vr-apps/update
+
+
+#### Usage
+1. Open https://ox-dig-innov.github.io/curated-vr-apps/update
+2. Drag updated CSV/XLS data file into the app (or file pick)
+3. Download the resulting **bookmarks.json** file
+4. Manually deploy **bookmarks.json** file in /data folder
+
+
+#### Configuration
+```
+const ABOUT_TITLE = "Digital Innovation Curated VR Apps";
+const INCLUDE_COLUMNS = ["title", "url", "about"];
+
+```
+
+
+
+### Python tool (legacy)
 #### convert-to-json.py
 - Command Line tool to convert VR Bookmarks from CSV to JSON
 - tool adds current date and a title to JSON
 - selects specific columns in CSV, defined as REQUIRED_COLUMNS
 - ignores any extra columns in CSV, so CSV can store metadata which is not transferred to JSON
 - input: CSV - master file used for manual editing the data
-- output: JSON - used by web app
-
+- output: JSON - used by main app
 
 #### Usage
 `python convert-to-json.py bookmarks.csv bookmarks.json`
@@ -41,8 +70,13 @@
 # Constants
 ABOUT_TITLE = "Digital Innovation Curated VR Apps"
 DATE_FORMAT = "%d %b %Y"
-REQUIRED_COLUMNS = ['name', 'title', 'url', 'about']
+REQUIRED_COLUMNS = ['group', 'title', 'url', 'about']
 ```
+
+
+## Data file formats
+
+#### CSV Format
 
 
 
@@ -55,7 +89,7 @@ REQUIRED_COLUMNS = ['name', 'title', 'url', 'about']
   },
   "groups": [
     {
-      "name": "Wellbeing",
+      "group": "Wellbeing",
       "bookmarks": [
         {
           "title": "Flowborne VR",
