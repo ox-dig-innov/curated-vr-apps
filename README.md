@@ -1,4 +1,9 @@
 ## About
+
+A web app to showcase a curated set of VR apps.
+
+![curated vr apps screenshot](screenshot.jpg)
+
 - Oxford University Digital Innovation Team showcases VR in its Immersive Lab and loan equipment
 - This web app curates a selection of commercially available VR apps for Meta Quest 2 and 3 VR Headsets
 - It is designed to be bookmarked and used in the Meta Quest browser, as well as desktop browsers
